@@ -9,7 +9,6 @@ from app.config import Config
 db = SQLAlchemy()
 ma = Marshmallow()
 jwt = JWTManager()
-api = Api()
 
 
 def create_app():
@@ -19,13 +18,17 @@ def create_app():
     db.init_app(app)
     ma.init_app(app)
     jwt.init_app(app)
-    api.init_app(app)
 
-    from app.resources import BlacklistResource
+    api = Api(app)
+
+    from app.resources import BlacklistResource, BlacklistCheckResource
 
     api.add_resource(BlacklistResource, "/blacklists")
+    api.add_resource(BlacklistCheckResource, "/blacklists/<string:email>")
 
     with app.app_context():
         db.create_all()
+
+    print(app.url_map)
 
     return app

@@ -52,6 +52,26 @@ class BlacklistResource(Resource):
         return {"message": "Email agregado exitosamente a la blacklist"}, 201
 
 
+class BlacklistCheckResource(Resource):
+    method_decorators = [jwt_required()]
+
+    def get(self, email):
+        normalized_email = email.strip().lower()
+
+        blacklist_entry = BlacklistEntry.query.filter_by(email=normalized_email).first()
+
+        if blacklist_entry:
+            return {
+                "is_blacklisted": True,
+                "blocked_reason": blacklist_entry.blocked_reason
+            }, 200
+
+        return {
+            "is_blacklisted": False,
+            "blocked_reason": None
+        }, 200
+
+
 def _extract_request_ip():
     forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
     if forwarded_for:
