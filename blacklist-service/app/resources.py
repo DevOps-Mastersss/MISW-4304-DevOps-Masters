@@ -72,6 +72,11 @@ class BlacklistCheckResource(Resource):
         }, 200
 
 
+class HealthResource(Resource):
+    def get(self):
+        return {"status": "healthy"}, 200
+
+
 def _extract_request_ip():
     forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
     if forwarded_for:
