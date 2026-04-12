@@ -1,0 +1,337 @@
+{
+  "info": {
+    "name": "Blacklist Service API - Entrega 1",
+    "description": "Documentacion del API REST del microservicio de blacklist global de emails. Incluye los endpoints requeridos para agregar un email a la lista negra global y consultar si un email esta bloqueado. Todos los endpoints funcionales usan autorizacion Bearer Token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://messagingapidevops-env.eba-qgashekg.us-east-1.elasticbeanstalk.com",
+      "type": "string"
+    },
+    {
+      "key": "bearer_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3NjAzMTYwNywianRpIjoiZjZhZjllMGYtNzEyZi00YjZkLWJmMDEtYmQ1ZmU5YzY4OTgxIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6InBvc3RtYW4tbG9jYWwtdXNlciIsIm5iZiI6MTc3NjAzMTYwNywiY3NyZiI6IjU4MWRiNjZmLTMzYWItNDJiMC1iNDA3LWNjOTU2YmU2YWQ4ZiIsImV4cCI6MTc3NjExODAwN30.EX60rGvSVSHdqvsncj8bukc9ZO4PZBvSrS_zd4oGLJE",
+      "type": "string"
+    },
+    {
+      "key": "email",
+      "value": "cliente.blacklist@example.com",
+      "type": "string"
+    },
+    {
+      "key": "email_not_found",
+      "value": "cliente.no.bloqueado@example.com",
+      "type": "string"
+    },
+    {
+      "key": "app_uuid",
+      "value": "550e8400-e29b-41d4-a716-446655440000",
+      "type": "string"
+    },
+    {
+      "key": "blocked_reason",
+      "value": "Fraude detectado",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health check",
+      "item": [
+        {
+          "name": "GET /health - Verificar disponibilidad del servicio",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Endpoint tecnico para validar que la aplicacion esta disponible y puede usarse como health check en AWS Elastic Beanstalk."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta healthy', function () { pm.expect(pm.response.json().status).to.eql('healthy'); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Blacklists",
+      "description": "Endpoints requeridos por la entrega para agregar y consultar emails en la blacklist global.",
+      "item": [
+        {
+          "name": "POST /blacklists - Agregar email a la blacklist",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"app_uuid\": \"{{app_uuid}}\",\n  \"blocked_reason\": \"{{blocked_reason}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/blacklists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blacklists"
+              ]
+            },
+            "description": "Agrega un email a la lista negra global. Parametros JSON: email obligatorio, app_uuid obligatorio con formato UUID, blocked_reason opcional con maximo 255 caracteres. El microservicio guarda internamente la IP origen y la fecha/hora de la solicitud. Requiere Authorization: Bearer <token>."
+          },
+          "response": [
+            {
+              "name": "201 - Email agregado",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Email agregado exitosamente a la blacklist\"\n}"
+            },
+            {
+              "name": "409 - Email duplicado",
+              "status": "Conflict",
+              "code": 409,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"El email ya se encuentra en la blacklist\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status esperado 201 o 409', function () { pm.expect([201, 409]).to.include(pm.response.code); });",
+                  "pm.test('Respuesta JSON con message', function () { pm.expect(pm.response.json()).to.have.property('message'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "POST /blacklists - Validar datos invalidos",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"correo-invalido\",\n  \"app_uuid\": \"uuid-invalido\",\n  \"blocked_reason\": \"Escenario de validacion negativa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/blacklists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blacklists"
+              ]
+            },
+            "description": "Escenario negativo para comprobar validaciones de email y UUID. Debe retornar 400 Bad Request."
+          },
+          "response": [
+            {
+              "name": "400 - Datos invalidos",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Datos invalidos\",\n  \"errors\": {\n    \"email\": [\n      \"Not a valid email address.\"\n    ],\n    \"app_uuid\": [\n      \"Not a valid UUID.\"\n    ]\n  }\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Respuesta con errores', function () { pm.expect(pm.response.json()).to.have.property('errors'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /blacklists/:email - Consultar email bloqueado",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blacklists/{{email}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blacklists",
+                "{{email}}"
+              ]
+            },
+            "description": "Consulta si un email esta en la blacklist global. Retorna is_blacklisted=true y el motivo cuando existe."
+          },
+          "response": [
+            {
+              "name": "200 - Email bloqueado",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"is_blacklisted\": true,\n  \"blocked_reason\": \"Fraude detectado\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Tiene campo is_blacklisted', function () { pm.expect(pm.response.json()).to.have.property('is_blacklisted'); });",
+                  "pm.test('Tiene campo blocked_reason', function () { pm.expect(pm.response.json()).to.have.property('blocked_reason'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /blacklists/:email - Consultar email no bloqueado",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearer_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blacklists/{{email_not_found}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blacklists",
+                "{{email_not_found}}"
+              ]
+            },
+            "description": "Escenario de consulta para un email que no esta en la blacklist global. Debe retornar is_blacklisted=false y blocked_reason=null."
+          },
+          "response": [
+            {
+              "name": "200 - Email no bloqueado",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"is_blacklisted\": false,\n  \"blocked_reason\": null\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('No esta bloqueado', function () { pm.expect(pm.response.json().is_blacklisted).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

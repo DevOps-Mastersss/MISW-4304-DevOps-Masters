@@ -1,6 +1,6 @@
 # Blacklist Service
 
-Microservicio Flask para la primera entrega del proyecto universitario de blacklist global de emails. Esta implementación cubre exclusivamente el alcance de Persona 1: base técnica compartida del backend y endpoint `POST /blacklists`.
+Microservicio Flask para la primera entrega del proyecto universitario de blacklist global de emails. Esta implementación expone los endpoints requeridos para agregar emails a la blacklist y consultar si un email se encuentra bloqueado.
 
 ## Estructura del proyecto
 
@@ -13,7 +13,11 @@ blacklist-service/
 │   ├── models.py
 │   ├── resources.py
 │   └── schemas.py
-├── run.py
+├── application.py
+├── postman/
+│   ├── blacklist-service.postman_collection.json
+│   ├── blacklist-service.postman_environment.json
+│   └── README.md
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
@@ -39,6 +43,9 @@ blacklist-service/
 - Conexión a PostgreSQL
 - Modelo relacional `blacklist_entries`
 - Endpoint protegido `POST /blacklists`
+- Endpoint protegido `GET /blacklists/<email>`
+- Endpoint técnico `GET /health`
+- Colección y ambiente de Postman para documentar y probar el API REST
 - Utilidad para generar un JWT manual para pruebas locales
 
 ## Variables de entorno
@@ -74,13 +81,13 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 cp .env.example .env
-python run.py
+python application.py
 ```
 
 La aplicación queda disponible en:
 
 ```text
-http://localhost:5000
+http://localhost:8080
 ```
 
 ## Generar un token JWT para pruebas
@@ -99,7 +106,7 @@ Authorization: Bearer <token>
 
 El token se firma usando `JWT_SECRET_KEY`, así que debe generarse después de configurar tu `.env`.
 
-## Endpoint implementado
+## Endpoints implementados
 
 ### POST /blacklists
 
@@ -191,12 +198,72 @@ Status code: `422 Unprocessable Entity`
 
 El mensaje exacto del token inválido puede variar dependiendo de cómo esté mal formado o firmado.
 
+### GET /blacklists/<email>
+
+Protegido con Bearer token usando Flask JWT Extended.
+
+#### Headers requeridos
+
+```text
+Authorization: Bearer <token>
+```
+
+#### Parámetros de ruta
+
+```text
+email: email del cliente a consultar
+```
+
+#### Respuesta si el email está bloqueado
+
+```json
+{
+  "is_blacklisted": true,
+  "blocked_reason": "Fraude detectado"
+}
+```
+
+Status code: `200 OK`
+
+#### Respuesta si el email no está bloqueado
+
+```json
+{
+  "is_blacklisted": false,
+  "blocked_reason": null
+}
+```
+
+Status code: `200 OK`
+
+### GET /health
+
+Endpoint técnico sin autenticación para validar disponibilidad del servicio y configurar health checks.
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+Status code: `200 OK`
+
+## Documentación Postman
+
+Los artefactos para documentar y probar el API REST están en `postman/`:
+
+- `postman/blacklist-service.postman_collection.json`
+- `postman/blacklist-service.postman_environment.json`
+- `postman/README.md`
+
+Importe la colección y el ambiente en el workspace del equipo en Postman, actualice las variables `base_url` y `bearer_token`, ejecute los escenarios y publique la documentación desde Postman. La URL pública generada debe anexarse al informe de arquitectura de la aplicación.
+
 ## Ejemplos de prueba con curl
 
 ### Creación exitosa
 
 ```bash
-curl --location --request POST 'http://localhost:5000/blacklists' \
+curl --location --request POST 'http://localhost:8080/blacklists' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <token>' \
 --data-raw '{
@@ -209,7 +276,7 @@ curl --location --request POST 'http://localhost:5000/blacklists' \
 ### Duplicado
 
 ```bash
-curl --location --request POST 'http://localhost:5000/blacklists' \
+curl --location --request POST 'http://localhost:8080/blacklists' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <token>' \
 --data-raw '{
@@ -221,7 +288,7 @@ curl --location --request POST 'http://localhost:5000/blacklists' \
 ### Datos inválidos
 
 ```bash
-curl --location --request POST 'http://localhost:5000/blacklists' \
+curl --location --request POST 'http://localhost:8080/blacklists' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <token>' \
 --data-raw '{
@@ -233,7 +300,6 @@ curl --location --request POST 'http://localhost:5000/blacklists' \
 
 ## Notas de diseño
 
-- No se implementó `GET /blacklists/<email>`
 - No se implementó login
 - No se implementaron refresh tokens
 - No se agregaron tests, migraciones, Docker ni CI/CD
@@ -243,4 +309,4 @@ curl --location --request POST 'http://localhost:5000/blacklists' \
 
 - La creación de tablas en arranque es suficiente para la primera entrega académica
 - `app_uuid` se almacena como string para simplificar la persistencia
-- El endpoint futuro `GET /blacklists/<email>` podrá reutilizar el mismo modelo, configuración y esquema sin reorganizar la base
+- El mismo modelo relacional soporta los endpoints de creación y consulta de blacklist
