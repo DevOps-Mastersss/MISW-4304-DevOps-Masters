@@ -21,14 +21,16 @@ def create_app():
 
     api = Api(app)
 
-    from app.resources import BlacklistResource, BlacklistCheckResource
+    from app.resources import BlacklistResource, BlacklistCheckResource, HealthResource
 
     api.add_resource(BlacklistResource, "/blacklists")
     api.add_resource(BlacklistCheckResource, "/blacklists/<string:email>")
+    api.add_resource(HealthResource, "/health")
 
     with app.app_context():
-        db.create_all()
-
-    print(app.url_map)
+        try:
+            db.create_all()
+        except Exception as e:
+            app.logger.error(f"db.create_all() failed on startup: {e}")
 
     return app
