@@ -18,6 +18,10 @@ blacklist-service/
 │   ├── blacklist-service.postman_collection.json
 │   ├── blacklist-service.postman_environment.json
 │   └── README.md
+├── tests/
+│   ├── conftest.py
+│   └── test_blacklist_resources.py
+├── pytest.ini
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
@@ -45,6 +49,7 @@ blacklist-service/
 - Endpoint protegido `POST /blacklists`
 - Endpoint protegido `GET /blacklists/<email>`
 - Endpoint técnico `GET /health`
+- Suite de pruebas unitarias con `pytest`
 - Colección y ambiente de Postman para documentar y probar el API REST
 - Utilidad para generar un JWT manual para pruebas locales
 
@@ -89,6 +94,61 @@ La aplicación queda disponible en:
 ```text
 http://localhost:8080
 ```
+
+## Pruebas unitarias
+
+La suite de pruebas backend está hecha con `pytest` y reutiliza la app Flask real con `test_client`. Las pruebas mockean el acceso a base de datos para no depender de PostgreSQL durante la validación local o en CI.
+
+### Ejecutar las pruebas desde la carpeta del microservicio
+
+```bash
+cd blacklist-service
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pytest -q
+```
+
+### Ejecutar las pruebas desde la raíz del repositorio
+
+Si prefieres quedarte en la raíz del repositorio `MISW-4304-DevOps-Masters`, usa rutas explícitas:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r blacklist-service/requirements.txt
+.venv/bin/pytest -q blacklist-service/tests
+```
+
+### Ejecutar una sola prueba
+
+```bash
+.venv/bin/pytest blacklist-service/tests/test_blacklist_resources.py::test_post_blacklists_creates_entry_successfully -q
+```
+
+Si ya estás dentro de `blacklist-service/`, el comando equivalente es:
+
+```bash
+.venv/bin/pytest tests/test_blacklist_resources.py::test_post_blacklists_creates_entry_successfully -q
+```
+
+### Ejecutar solo los casos de un endpoint
+
+```bash
+.venv/bin/pytest -k post_blacklists -q
+.venv/bin/pytest -k get_blacklists -q
+```
+
+### Resultado esperado
+
+Si todo está estable, deberías ver una salida similar a esta:
+
+```text
+10 passed in 0.03s
+```
+
+Estas pruebas cubren los escenarios principales de:
+
+- `POST /blacklists`: creación exitosa, payload inválido, duplicado, falta de token y token inválido
+- `GET /blacklists/<email>`: email existente, email no existente, falta de token y token inválido
 
 ## Generar un token JWT para pruebas
 
@@ -302,7 +362,7 @@ curl --location --request POST 'http://localhost:8080/blacklists' \
 
 - No se implementó login
 - No se implementaron refresh tokens
-- No se agregaron tests, migraciones, Docker ni CI/CD
+- No se agregaron migraciones, Docker ni CI/CD
 - La tabla se crea con `db.create_all()` al iniciar la aplicación
 
 ## Supuestos realizados

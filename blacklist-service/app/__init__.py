@@ -11,9 +11,12 @@ ma = Marshmallow()
 jwt = JWTManager()
 
 
-def create_app():
+def create_app(config_object=Config, config_overrides=None):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_object)
+
+    if config_overrides:
+        app.config.update(config_overrides)
 
     db.init_app(app)
     ma.init_app(app)
@@ -28,9 +31,10 @@ def create_app():
     api.add_resource(HealthResource, "/health")
 
     with app.app_context():
-        try:
-            db.create_all()
-        except Exception as e:
-            app.logger.error(f"db.create_all() failed on startup: {e}")
+        if not app.config.get("TESTING"):
+            try:
+                db.create_all()
+            except Exception as e:
+                app.logger.error(f"db.create_all() failed on startup: {e}")
 
     return app
