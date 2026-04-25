@@ -150,6 +150,50 @@ Estas pruebas cubren los escenarios principales de:
 - `POST /blacklists`: creación exitosa, payload inválido, duplicado, falta de token y token inválido
 - `GET /blacklists/<email>`: email existente, email no existente, falta de token y token inválido
 
+## Integración continua
+
+El repositorio está preparado para que AWS CodeBuild ejecute pruebas unitarias y genere un artefacto del microservicio sin depender de una base de datos PostgreSQL real.
+
+### Archivo de configuración para CodeBuild
+
+En la raíz del repositorio existe el archivo:
+
+```text
+buildspec.yml
+```
+
+Ese archivo realiza este flujo:
+
+- instala dependencias del servicio
+- ejecuta `pytest`
+- genera un zip del microservicio
+
+### Artefacto generado
+
+El build genera este archivo:
+
+```text
+blacklist-service/dist/blacklist-service.zip
+```
+
+### Validación local equivalente al build
+
+Desde la raíz del repositorio:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r blacklist-service/requirements.txt
+.venv/bin/pytest -q blacklist-service/tests
+cd blacklist-service
+mkdir -p dist
+zip -r dist/blacklist-service.zip . -x "dist/*" ".venv/*" "venv/*" "__pycache__/*" ".pytest_cache/*" "tests/*" "postman/*" "app/__pycache__/*" "*.pyc" "*.pyo" ".env" "blacklist-service.zip"
+```
+
+Si todo está correcto, obtendrás:
+
+- salida exitosa de `pytest`
+- archivo `blacklist-service/dist/blacklist-service.zip`
+
 ## Generar un token JWT para pruebas
 
 No existe login ni endpoint de autenticación. Para pruebas locales se genera un token manual con la utilidad incluida en `app/auth.py`.

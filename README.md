@@ -1,4 +1,43 @@
-# Blacklist Service
+# MISW-4304 DevOps Masters
+
+Este repositorio contiene el microservicio `blacklist-service` y está preparado para una fase de Integración Continua enfocada en pruebas unitarias y generación de artefactos con AWS CodeBuild.
+
+## CI del repositorio
+
+La configuración de build está en:
+
+```text
+buildspec.yml
+```
+
+Ese archivo permite que CodeBuild ejecute:
+
+1. instalación de dependencias
+2. ejecución de pruebas unitarias con `pytest`
+3. generación del artefacto `blacklist-service.zip`
+
+## Comandos equivalentes en local
+
+Desde la raíz del repositorio:
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r blacklist-service/requirements.txt
+.venv/bin/pytest -q blacklist-service/tests
+cd blacklist-service
+mkdir -p dist
+zip -r dist/blacklist-service.zip . -x "dist/*" ".venv/*" "venv/*" "__pycache__/*" ".pytest_cache/*" "tests/*" "postman/*" "app/__pycache__/*" "*.pyc" "*.pyo" ".env" "blacklist-service.zip"
+```
+
+## Documentación del microservicio
+
+La guía funcional y de pruebas del servicio está en:
+
+- `blacklist-service/README.md`
+
+---
+
+## Contexto del microservicio
 
 Microservicio Flask para la primera entrega del proyecto universitario de blacklist global de emails. Esta implementación expone los endpoints requeridos para agregar emails a la blacklist y consultar si un email se encuentra bloqueado.
 

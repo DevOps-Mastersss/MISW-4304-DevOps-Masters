@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - cd blacklist-service
+      - python -m pip install --upgrade pip
+      - pip install -r requirements.txt
+  pre_build:
+    commands:
+      - pytest -q
+  build:
+    commands:
+      - mkdir -p dist
+      - zip -r dist/blacklist-service.zip . -x "dist/*" ".venv/*" "venv/*" "__pycache__/*" ".pytest_cache/*" "tests/*" "postman/*" "app/__pycache__/*" "*.pyc" "*.pyo" ".env" "blacklist-service.zip"
+
+artifacts:
+  files:
+    - blacklist-service/dist/blacklist-service.zip
+  discard-paths: yes
