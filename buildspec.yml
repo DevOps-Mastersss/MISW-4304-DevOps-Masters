@@ -10,7 +10,7 @@ phases:
       - pip install -r requirements.txt
   pre_build:
     commands:
-      - pytest -q
+      - pytest archivo_que_no_existe.py
   build:
     commands:
       - mkdir -p dist
