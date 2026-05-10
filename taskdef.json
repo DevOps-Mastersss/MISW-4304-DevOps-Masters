@@ -1,21 +1,128 @@
 {
-  "family": "blacklist-task",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": ["FARGATE"],
-  "cpu": "512",
-  "memory": "1024",
-  "executionRoleArn": "PENDIENTE",
-  "containerDefinitions": [
-    {
-      "name": "blacklist-service",
-      "image": "<IMAGE1_NAME>",
-      "essential": true,
-      "portMappings": [
+    "taskDefinitionArn": "arn:aws:ecs:us-east-1:239334275706:task-definition/blacklist-task:1",
+    "containerDefinitions": [
         {
-          "containerPort": 8080,
-          "protocol": "tcp"
+            "name": "blacklist-service",
+            "image": "239334275706.dkr.ecr.us-east-1.amazonaws.com/blacklist-service/latest",
+            "cpu": 0,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp",
+                    "name": "blacklist-service-8080-tcp",
+                    "appProtocol": "http"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "FLASK_APP",
+                    "value": "run.py"
+                },
+                {
+                    "name": "FLASK_ENV",
+                    "value": "development"
+                },
+                {
+                    "name": "DB_PORT",
+                    "value": "5432"
+                },
+                {
+                    "name": "DB_USER",
+                    "value": "postgres"
+                },
+                {
+                    "name": "SECRET_KEY",
+                    "value": "devops-masters-entrega1-secret"
+                },
+                {
+                    "name": "DB_NAME",
+                    "value": "postgres"
+                },
+                {
+                    "name": "JWT_SECRET_KEY",
+                    "value": "devops-masters-entrega1-jwt-secret-key"
+                },
+                {
+                    "name": "DB_HOST",
+                    "value": "database-messaging.cwhsssg8m0om.us-east-1.rds.amazonaws.com"
+                },
+                {
+                    "name": "DB_SSLMODE",
+                    "value": "require"
+                },
+                {
+                    "name": "DB_PASSWORD",
+                    "value": "postgres*123"
+                }
+            ],
+            "environmentFiles": [],
+            "mountPoints": [],
+            "volumesFrom": [],
+            "ulimits": [],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/blacklist-task",
+                    "awslogs-create-group": "true",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "ecs"
+                },
+                "secretOptions": []
+            },
+            "systemControls": []
         }
-      ]
-    }
-  ]
+    ],
+    "family": "blacklist-task",
+    "executionRoleArn": "arn:aws:iam::239334275706:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "revision": 1,
+    "volumes": [],
+    "status": "ACTIVE",
+    "requiresAttributes": [
+        {
+            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+        },
+        {
+            "name": "ecs.capability.execution-role-awslogs"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.ecr-auth"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+        },
+        {
+            "name": "ecs.capability.execution-role-ecr-pull"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+        },
+        {
+            "name": "ecs.capability.task-eni"
+        },
+        {
+            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+        }
+    ],
+    "placementConstraints": [],
+    "compatibilities": [
+        "EC2",
+        "MANAGED_INSTANCES",
+        "FARGATE"
+    ],
+    "runtimePlatform": {
+        "cpuArchitecture": "X86_64",
+        "operatingSystemFamily": "LINUX"
+    },
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "512",
+    "memory": "1024",
+    "registeredAt": "2026-05-10T23:53:26.438Z",
+    "registeredBy": "arn:aws:iam::239334275706:root",
+    "enableFaultInjection": false,
+    "tags": []
 }
