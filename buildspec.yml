@@ -1,22 +1,50 @@
 version: 0.2
 
+env:
+  variables:
+    AWS_REGION: us-east-1
+    AWS_ACCOUNT_ID: "239334275706"
+    ECR_REPO: blacklist-service
+    CONTAINER_NAME: blacklist-service
+
 phases:
   install:
     runtime-versions:
       python: 3.11
     commands:
-      - cd blacklist-service
-      - python -m pip install --upgrade pip
-      - pip install -r requirements.txt
+      - echo "Instalando dependencias para pruebas..."
+      - pip install --upgrade pip
+      - pip install -r blacklist-service/requirements.txt
+
   pre_build:
     commands:
-      - pytest -q
+      - echo "Ejecutando pruebas unitarias..."
+      - cd blacklist-service && pytest -q && cd ..
+      - echo "Login a Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      - REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+
   build:
     commands:
-      - mkdir -p dist
-      - zip -r dist/blacklist-service.zip . -x "dist/*" ".venv/*" "venv/*" "__pycache__/*" ".pytest_cache/*" "tests/*" "postman/*" "app/__pycache__/*" "*.pyc" "*.pyo" ".env" "blacklist-service.zip"
+      - echo "Construyendo imagen Docker..."
+      - docker build -t $REPO_URI:$IMAGE_TAG ./blacklist-service
+      - docker tag $REPO_URI:$IMAGE_TAG $REPO_URI:latest
+
+  post_build:
+    commands:
+      - echo "Subiendo imagen a ECR..."
+      - docker push $REPO_URI:$IMAGE_TAG
+      - docker push $REPO_URI:latest
+      - echo "Generando archivos de artefacto para CodeDeploy..."
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPO_URI:$IMAGE_TAG > imagedefinitions.json
+      - sed -i "s|<IMAGE1_NAME>|$REPO_URI:$IMAGE_TAG|g" taskdef.json
+      - cat imagedefinitions.json
+      - cat taskdef.json
 
 artifacts:
   files:
-    - blacklist-service/dist/blacklist-service.zip
-  discard-paths: yes
+    - appspec.yaml
+    - taskdef.json
+    - imagedefinitions.json
