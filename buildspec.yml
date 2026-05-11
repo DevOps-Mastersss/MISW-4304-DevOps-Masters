@@ -22,29 +22,29 @@ phases:
       - cd blacklist-service && pytest -q && cd ..
       - echo "Login a Amazon ECR..."
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-      - REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=${COMMIT_HASH:-latest}
+      - export REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPO
+      - export COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - export IMAGE_TAG=${COMMIT_HASH:-latest}
+      - export IMAGE_URI=$REPO_URI:$IMAGE_TAG
 
   build:
     commands:
       - echo "Construyendo imagen Docker..."
-      - docker build -t $REPO_URI:$IMAGE_TAG ./blacklist-service
-      - docker tag $REPO_URI:$IMAGE_TAG $REPO_URI:latest
+      - docker build -t $IMAGE_URI ./blacklist-service
+      - docker tag $IMAGE_URI $REPO_URI:latest
 
   post_build:
     commands:
       - echo "Subiendo imagen a ECR..."
-      - docker push $REPO_URI:$IMAGE_TAG
+      - docker push $IMAGE_URI
       - docker push $REPO_URI:latest
-      - echo "Generando archivos de artefacto para CodeDeploy..."
-      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPO_URI:$IMAGE_TAG > imagedefinitions.json
-      - sed -i "s|<IMAGE1_NAME>|$REPO_URI:$IMAGE_TAG|g" taskdef.json
-      - cat imagedefinitions.json
+      - echo "Generando artefacto de imagen para uso posterior..."
+      - printf '{"ImageURI":"%s"}' $IMAGE_URI > imageDetail.json
+      - cat imageDetail.json
       - cat taskdef.json
 
 artifacts:
   files:
     - appspec.yaml
     - taskdef.json
-    - imagedefinitions.json
+    - imageDetail.json
